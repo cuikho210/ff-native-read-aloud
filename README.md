@@ -1,15 +1,16 @@
-# native-read-aloud
+# Native Read Aloud
 
-To install dependencies:
+A simple read-aloud extension. Once installed, simply press Shift+A to have the selected text read aloud.
+
+## Requirements
+
+- [Bun](https://bun.sh)
+
+## Build Instructions
 
 ```bash
 bun install
+bun run build
 ```
 
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.1.29. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+All output files will be located in the `dist` directory.
