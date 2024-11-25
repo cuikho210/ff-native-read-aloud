@@ -1,3 +1,5 @@
+import { loadPitch, loadPlaybackRate, loadVolume } from "./store";
+
 const synth = window.speechSynthesis;
 main();
 
@@ -86,12 +88,15 @@ async function readSequentially(texts: string[], gapInMs = 500) {
 }
 
 function readAloud(text: string): Promise<void> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     if (synth.speaking) {
       synth.cancel();
     }
 
     const utter = new SpeechSynthesisUtterance(text);
+    utter.pitch = await loadPitch();
+    utter.rate = await loadPlaybackRate();
+    utter.volume = await loadVolume();
 
     utter.onend = function () {
       resolve();

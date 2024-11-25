@@ -1,0 +1,29 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    position: relative;
+    margin: 0 auto;
+    padding: 0.8rem;
+}
+
+.gap {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+}
+
+input[type="range"] {
+    width: 100%;
+}
+
+input[type="radio"] {
+    margin-right: 0.4rem;
+}
+
+#popup-content {
+    width: 300px;
+}

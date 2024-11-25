@@ -5,7 +5,10 @@ import { build } from "bun";
 const distDir = resolve(__dirname, "./dist");
 const publicDir = resolve(__dirname, "./public");
 const srcDir = resolve(__dirname, "./src");
-const entrypoints: string[] = [resolve(srcDir, "content_script.ts")];
+const entrypoints: string[] = [
+  resolve(srcDir, "controller.ts"),
+  resolve(srcDir, "content_script.ts"),
+];
 
 main();
 
@@ -27,9 +30,11 @@ async function createCleanDist() {
 async function buildToDist() {
   console.info("Starting to build to dist");
 
-  await build({
+  const res = await build({
     entrypoints,
     outdir: distDir,
     minify: true,
   });
+
+  console.info("Building to dist: ", res);
 }
