@@ -4,9 +4,11 @@ import {
   keyVolume,
   loadPitch,
   loadPlaybackRate,
+  loadVoiceIndex,
   loadVolume,
   storePitch,
   storePlaybackRate,
+  storeVoiceIndex,
   storeVolume,
 } from "./store";
 
@@ -28,22 +30,30 @@ async function initOptions() {
   bindNumberOptions(keyPlaybackRate, playbackRate, storePlaybackRate);
 }
 
-function listVoices() {
+async function listVoices() {
   const elVoices = $("#list-voices");
   const voices = window.speechSynthesis.getVoices();
+  const voiceIndex = await loadVoiceIndex();
 
-  for (const voice of voices) {
+  voices.forEach((voice, index) => {
     const input = document.createElement("input");
     input.type = "radio";
     input.name = "voice";
     input.value = voice.name;
+    input.checked = voiceIndex === index;
+    input.oninput = () => {
+      storeVoiceIndex(index);
+    };
 
     const label = document.createElement("label");
     label.append(input);
     label.append(voice.name);
 
-    elVoices?.appendChild(label);
-  }
+    const p = document.createElement("p");
+    p.append(label);
+
+    elVoices?.appendChild(p);
+  });
 }
 
 function bindNumberOptions(

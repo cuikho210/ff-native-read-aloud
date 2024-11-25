@@ -1,4 +1,16 @@
-import { loadPitch, loadPlaybackRate, loadVolume } from "./store";
+import {
+  loadPitch,
+  loadPlaybackRate,
+  loadVoiceIndex,
+  loadVolume,
+} from "./store";
+
+interface ReadAloudOptions {
+  volume: number;
+  pitch: number;
+  rate: number;
+  voice: SpeechSynthesisVoice;
+}
 
 const synth = window.speechSynthesis;
 main();
@@ -81,22 +93,38 @@ function splitTextIntoParagraphs(text: string): string[] {
 }
 
 async function readSequentially(texts: string[], gapInMs = 500) {
+  const volume = await loadVolume();
+  const pitch = await loadPitch();
+  const rate = await loadPlaybackRate();
+  const voiceIndex = await loadVoiceIndex();
+  const voice = synth.getVoices()[voiceIndex || 0];
+  const options: ReadAloudOptions = {
+    voice,
+    volume,
+    rate,
+    pitch,
+  };
+
   for (const text of texts) {
-    await readAloud(text);
+    await readAloud(text, options);
     await sleep(gapInMs);
   }
 }
 
-function readAloud(text: string): Promise<void> {
+function readAloud(text: string, options?: ReadAloudOptions): Promise<void> {
   return new Promise(async (resolve, reject) => {
     if (synth.speaking) {
       synth.cancel();
     }
 
     const utter = new SpeechSynthesisUtterance(text);
-    utter.pitch = await loadPitch();
-    utter.rate = await loadPlaybackRate();
-    utter.volume = await loadVolume();
+
+    if (options) {
+      utter.pitch = options.pitch;
+      utter.rate = options.rate;
+      utter.volume = options.volume;
+      utter.voice = options.voice;
+    }
 
     utter.onend = function () {
       resolve();
