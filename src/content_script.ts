@@ -1,18 +1,5 @@
-import {
-  loadPitch,
-  loadPlaybackRate,
-  loadVoiceIndex,
-  loadVolume,
-} from "./store";
+import { readSequentially as nativeReadSequentially } from "./native_read_aloud";
 
-interface ReadAloudOptions {
-  volume: number;
-  pitch: number;
-  rate: number;
-  voice: SpeechSynthesisVoice;
-}
-
-const synth = window.speechSynthesis;
 main();
 
 function main() {
@@ -71,13 +58,17 @@ function listenShortcutEvent(w: Window) {
         if (!text) return console.log("Rejected by text:", text);
 
         const texts = splitTextIntoParagraphs(text);
-        readSequentially(texts);
+        readAloud(texts);
         console.log("Started read-aloud", texts);
       }
     });
   } catch (e) {
     console.error("[listenShortcutEvent]", e);
   }
+}
+
+function readAloud(texts: string[]) {
+  nativeReadSequentially(texts);
 }
 
 function getSelectedText() {
@@ -90,56 +81,4 @@ function splitTextIntoParagraphs(text: string): string[] {
   return paragraphs
     .map((paragraph) => paragraph.trim())
     .filter((paragraph) => paragraph.length > 0);
-}
-
-async function readSequentially(texts: string[], gapInMs = 500) {
-  const volume = await loadVolume();
-  const pitch = await loadPitch();
-  const rate = await loadPlaybackRate();
-  const voiceIndex = await loadVoiceIndex();
-  const voice = synth.getVoices()[voiceIndex || 0];
-  const options: ReadAloudOptions = {
-    voice,
-    volume,
-    rate,
-    pitch,
-  };
-
-  for (const text of texts) {
-    await readAloud(text, options);
-    await sleep(gapInMs);
-  }
-}
-
-function readAloud(text: string, options?: ReadAloudOptions): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    if (synth.speaking) {
-      synth.cancel();
-    }
-
-    const utter = new SpeechSynthesisUtterance(text);
-
-    if (options) {
-      utter.pitch = options.pitch;
-      utter.rate = options.rate;
-      utter.volume = options.volume;
-      utter.voice = options.voice;
-    }
-
-    utter.onend = function () {
-      resolve();
-    };
-
-    utter.onerror = function (event) {
-      reject(event);
-    };
-
-    synth.speak(utter);
-  });
-}
-
-function sleep(durInMs: number) {
-  return new Promise<void>((resolve) => {
-    setTimeout(() => resolve(), durInMs);
-  });
 }
