@@ -1,6 +1,6 @@
-import type { SimpleServerReadAloudOptions } from "./types";
+import type { SimpleServerReadAloudOptions } from "./types.d";
 import { loadPlaybackRate, loadSpeakerId } from "./store";
-import { sleep } from "bun";
+import { sleep } from "./utils";
 
 const abortController = new AbortController();
 let isFetching = false;

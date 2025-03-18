@@ -1,4 +1,4 @@
-import type { ReadAloudDriver } from "./types";
+import type { ReadAloudDriver } from "./types.d";
 
 export const keyPitch = "pitch";
 export const keyVolume = "volume";

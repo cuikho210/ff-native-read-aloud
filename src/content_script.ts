@@ -1,7 +1,7 @@
 import { readSequentially as nativeReadSequentially } from "./native_read_aloud";
 import { readSequentially as simpleServerReadSequentially } from "./simple_server_read_aloud";
 import { loadDriver } from "./store";
-import { ReadAloudDriver } from "./types";
+import { ReadAloudDriver } from "./types.d";
 
 main();
 

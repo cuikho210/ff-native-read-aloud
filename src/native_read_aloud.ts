@@ -1,11 +1,11 @@
-import type { ReadAloudOptions } from "./types";
+import type { ReadAloudOptions } from "./types.d";
 import {
   loadPitch,
   loadPlaybackRate,
   loadVoiceIndex,
   loadVolume,
 } from "./store";
-import { sleep } from "bun";
+import { sleep } from "./utils";
 
 const synth = window.speechSynthesis;
 
