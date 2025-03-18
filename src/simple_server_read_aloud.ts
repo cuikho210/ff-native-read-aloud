@@ -2,8 +2,7 @@ import type { SimpleServerReadAloudOptions } from "./types.d";
 import { loadPlaybackRate, loadSpeakerId } from "./store";
 import { sleep } from "./utils";
 
-const abortController = new AbortController();
-let isFetching = false;
+let abortController: AbortController | null = null;
 
 export async function readSequentially(texts: string[], gapInMs = 500) {
   const options: SimpleServerReadAloudOptions = {
@@ -21,8 +20,9 @@ export async function readAloud(
   text: string,
   options: SimpleServerReadAloudOptions,
 ) {
-  if (isFetching) {
+  if (abortController) {
     abortController.abort("Aborted due to a new request");
+    abortController = null;
   }
 
   const body = {
@@ -31,17 +31,20 @@ export async function readAloud(
     content: text,
   };
 
-  isFetching = true;
+  abortController = new AbortController();
 
   try {
     await fetch(options.url || "http://localhost:3001/speak", {
       method: "POST",
       body: JSON.stringify(body),
       signal: abortController.signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
   } catch (e) {
     console.error(e);
   }
 
-  isFetching = false;
+  abortController = null;
 }

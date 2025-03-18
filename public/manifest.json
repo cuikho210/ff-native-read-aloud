@@ -6,7 +6,7 @@
   "icons": {
     "48": "icon-48.png"
   },
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "*://localhost/*"],
   "browser_action": {
     "default_icon": "icon-32.png",
     "default_title": "Read-aloud controls",

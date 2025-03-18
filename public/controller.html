@@ -6,12 +6,12 @@
     </head>
     <body>
         <div id="popup-content">
-            <div class="container">
+            <!-- <div class="container">
                 <h3>Controls</h3>
                 <div class="gap"></div>
 
                 <button>Stop</button>
-            </div>
+            </div> -->
 
             <div class="container">
                 <h3>Options</h3>
@@ -54,10 +54,30 @@
             </div>
 
             <div class="container">
+                <h3>Simple server tts config</h3>
+                <div class="gap"></div>
+
+                <div>
+                    <p>Speaker ID <span id="l-speaker-id"></span></p>
+                    <input type="number" id="i-speaker-id" />
+                </div>
+            </div>
+
+            <div class="container">
                 <h3>Voices</h3>
                 <div class="gap"></div>
 
                 <div id="list-voices"></div>
+            </div>
+
+            <div class="container">
+                <h3>Driver</h3>
+                <div class="gap"></div>
+
+                <select id="i-driver">
+                    <option value="native">Native</option>
+                    <option value="simple-server">Simple Server</option>
+                </select>
             </div>
         </div>
 

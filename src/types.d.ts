@@ -16,6 +16,6 @@ export interface SimpleServerReadAloudOptions {
 }
 
 export enum ReadAloudDriver {
-  Native,
-  SimpleServer,
+  Native = "native",
+  SimpleServer = "simple-server",
 }

@@ -33,7 +33,7 @@ async function buildToDist() {
   const res = await build({
     entrypoints,
     outdir: distDir,
-    minify: true,
+    minify: false,
   });
 
   console.info("Building to dist: ", res);
