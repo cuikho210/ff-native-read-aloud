@@ -1,3 +1,5 @@
+import type { ReadAloudDriver } from "./types";
+
 export const keyPitch = "pitch";
 export const keyVolume = "volume";
 export const keyPlaybackRate = "playback-rate";
@@ -40,10 +42,10 @@ export async function loadPlaybackRate(): Promise<number> {
   return (await loadOption(keyPlaybackRate)) ?? 1;
 }
 
-export async function storeDriver(value: string) {
+export async function storeDriver(value: ReadAloudDriver) {
   await storeOption(keyDriver, value);
 }
-export async function loadDriver(): Promise<string | undefined> {
+export async function loadDriver(): Promise<ReadAloudDriver | undefined> {
   return await loadOption(keyDriver);
 }
 

@@ -1,4 +1,7 @@
 import { readSequentially as nativeReadSequentially } from "./native_read_aloud";
+import { readSequentially as simpleServerReadSequentially } from "./simple_server_read_aloud";
+import { loadDriver } from "./store";
+import { ReadAloudDriver } from "./types";
 
 main();
 
@@ -67,8 +70,14 @@ function listenShortcutEvent(w: Window) {
   }
 }
 
-function readAloud(texts: string[]) {
-  nativeReadSequentially(texts);
+async function readAloud(texts: string[]) {
+  const driver = await loadDriver();
+
+  if (driver == ReadAloudDriver.SimpleServer) {
+    simpleServerReadSequentially(texts);
+  } else {
+    nativeReadSequentially(texts);
+  }
 }
 
 function getSelectedText() {
