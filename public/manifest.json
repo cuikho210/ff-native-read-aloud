@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Native Read Aloud",
-  "version": "1.4",
+  "version": "1.5",
   "description": "A tool to read aloud content using native tts",
   "icons": {
     "48": "icon-48.png"
