@@ -57,8 +57,6 @@ function listenShortcutEvent(w: Window) {
   try {
     w.addEventListener("keydown", (event) => {
       if (event.shiftKey && event.key === "A") {
-        event.preventDefault();
-
         const text = getSelectedText().trim();
         if (!text) return console.log("Rejected by text:", text);
 
