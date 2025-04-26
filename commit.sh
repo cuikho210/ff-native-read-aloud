@@ -18,7 +18,7 @@ function load_provider_config() {
             AUTH_HEADER="Authorization: Bearer $OPENAI_API_KEY"
             ;;
         "gemini")
-            MODEL="gemini-2.0-flash"
+            MODEL="gemini-2.5-flash-preview-04-17"
             API_URL="https://generativelanguage.googleapis.com/v1beta/models/$MODEL:generateContent"
             AUTH_HEADER="x-goog-api-key: $GEMINI_API_KEY"
             ;;
@@ -102,7 +102,6 @@ function call_gemini_api() {
                 {\"role\": \"user\", \"parts\": [{\"text\": ${user_msg}}]}
             ],
             \"systemInstruction\": {
-                \"role\": \"user\",
                 \"parts\": [{\"text\": ${system_message}}]
             }
         }"
@@ -156,105 +155,57 @@ function main() {
         echo "$commit_msg"
         echo "----------------------------------------------"
 
-        read -p "Do you accept this commit message? (y/n): " confirm
+        read -p "Accept this commit message? (y/n/e to edit): " confirm
         case $confirm in
             [Yy]*)
                 git commit -S -m "$commit_msg"
                 exit 0
                 ;;
+            [Ee]*)
+                temp_file=$(mktemp)
+                echo "$commit_msg" > "$temp_file"
+
+                ${EDITOR:-vim} "$temp_file"
+
+                edited_msg=$(cat "$temp_file")
+                rm "$temp_file"
+
+                echo "---------- Edited commit message ----------"
+                echo "$edited_msg"
+                echo "-------------------------------------------"
+                read -p "Commit with this message? (y/n): " edit_confirm
+                if [[ $edit_confirm =~ ^[Yy] ]]; then
+                    git commit -S -m "$edited_msg"
+                    exit 0
+                else
+                    echo "Retrying..."
+                fi
+                ;;
             [Nn]*) echo "Retrying..." ;;
-            *) echo "Please answer y or n." ;;
+            *) echo "Please answer y, n, or e." ;;
         esac
     done
 }
 
+# Source: https://github.com/zed-industries/zed/blob/main/crates/git_ui/src/commit_message_prompt.txt
 system_message=$(cat <<'EOF' | jq -Rs .
-# Generate a concise Git commit message following the Conventional Commits format:
+You are an expert at writing Git commits. Your job is to write a short clear commit message that summarizes the changes.
 
-```
-<type>(<scope>): <description>
-```
+If you can accurately express the change in just the subject line, don't include anything in the message body. Only use the body when it is providing *useful* information.
 
-## **Types**
-The **type** indicates the purpose of the change. Here are the most common ones:
+Don't repeat information from the subject line in the message body.
 
-- **`feat`**: Adds a new feature (e.g., a new button or endpoint).
-- **`fix`**: Resolves a bug.
-- **`docs`**: Updates documentation (e.g., README or API docs).
-- **`style`**: Adjusts code formatting without changing logic (e.g., indentation).
-- **`refactor`**: Reworks code without adding features or fixing bugs.
-- **`test`**: Adds or improves tests.
-- **`chore`**: Handles minor updates (e.g., dependency bumps).
-- **`perf`**: Enhances performance.
-- **`ci`**: Modifies CI/CD processes (e.g., GitHub Actions).
-- **`build`**: Updates build tools or configurations.
+Only return the commit message in your response. Do not include any additional meta-commentary about the task. Do not include the raw diff output in the commit message.
 
-## **Scope**
-- **Optional**: Use it to specify the **part of the project** affected (e.g., `auth`, `ui`, `db`).
-- **Purpose**: Adds context and aids automation.
-- **Examples**: `feat(auth)` for authentication changes, `fix(ui)` for UI fixes.
-- **When to skip**: If the change impacts the whole project or no specific area.
-- **Tip**: Use consistent scope names across your project.
+Follow good Git style:
 
-## **Strong File-Scoping**
-- **File Emphasis**: ALWAYS use filename as scope when single-file changes are detected.
-- **Multi-file changes**: Group files logically by feature/component names.
-- **Example**: `fix(config.json)` instead of just `fix(config)`.
-- **Stricter Rule**: Keep filenames in scope, even when broader categorization exists.
-- **Git Diff Guidance**: Base scope on exact filenames shown in diff.
-
-## **Rules**
-- **Present tense**: Write "add" instead of "added".
-- **No period**: Keep it concise (e.g., "fix bug" not "fix bug.").
-- **Lowercase start**: Begin with a lowercase letter (e.g., "update config").
-- **Short first line**: Aim for under 72 characters.
-- **Breaking changes**: Add `BREAKING CHANGE:` for incompatible updates.
-- **Body**: Add details after a blank line if needed.
-- **Footer**: Include notes like "Fixes #123" or breaking change info.
-
-## **Examples**
-Here are practical examples for various cases:
-
-1. **Simple Fix**:
-```
-fix(ui): adjust button padding
-```
-
-2. **Feature with Details**:
-```
-feat(api): add user profile endpoint
-
-- Implement GET /users/:id
-- Add validation for user ID
-- Return 404 if user not found
-```
-
-3. **Breaking Change**:
-```
-feat(db): switch to MongoDB 6.0
-
-- Update connection string format
-- Drop support for legacy queries
-BREAKING CHANGE: Requires MongoDB 6.0+
-```
-
-4. **Minor Update**:
-```
-chore(deps): update lodash to 4.17.21
-```
-
-5. **Performance Boost**:
-```
-perf: cache database query results
-```
-
-6. **CI Change**:
-```
-ci: configure linting on pull requests
-```
-
-RETURNS ONLY THE COMMIT CONTENT WITHOUT ANY OTHER CONTENT.
-
+- Separate the subject from the body with a blank line
+- Try to limit the subject line to 50 characters
+- Do not capitalize the title line
+- Do not end the subject line with any punctuation
+- Use the imperative mood in the subject line
+- Wrap the body at 72 characters
+- Keep the body short and concise (omit it entirely if not useful)
 EOF
 )
 
