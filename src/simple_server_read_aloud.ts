@@ -10,8 +10,14 @@ export async function readSequentially(texts: string[], gapInMs = 500) {
     sid: await loadSpeakerId(),
   };
 
+  if (abortController) {
+    abortController.abort("Aborted due to a new request");
+  }
+
+  abortController = new AbortController();
+
   for (const text of texts) {
-    await readAloud(text, options);
+    await readAloud(text, options, abortController);
     await sleep(gapInMs);
   }
 }
@@ -19,19 +25,13 @@ export async function readSequentially(texts: string[], gapInMs = 500) {
 export async function readAloud(
   text: string,
   options: SimpleServerReadAloudOptions,
+  abortController: AbortController,
 ) {
-  if (abortController) {
-    abortController.abort("Aborted due to a new request");
-    abortController = null;
-  }
-
   const body = {
     sid: options.sid,
     speed: options.speed,
     content: text,
   };
-
-  abortController = new AbortController();
 
   try {
     await fetch(options.url || "http://localhost:3001/speak", {
@@ -45,6 +45,4 @@ export async function readAloud(
   } catch (e) {
     console.error(e);
   }
-
-  abortController = null;
 }
