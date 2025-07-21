@@ -1,19 +1,19 @@
 import type { ReadAloudOptions } from "./types.d";
 import {
-  loadPitch,
-  loadPlaybackRate,
-  loadVoiceIndex,
-  loadVolume,
+  pitchStore,
+  playbackRateStore,
+  voiceIndexStore,
+  volumeStore,
 } from "./store";
 import { sleep } from "./utils";
 
 const synth = window.speechSynthesis;
 
 export async function readSequentially(texts: string[], gapInMs = 500) {
-  const volume = await loadVolume();
-  const pitch = await loadPitch();
-  const rate = await loadPlaybackRate();
-  const voiceIndex = await loadVoiceIndex();
+  const volume = (await volumeStore.get()) ?? 1;
+  const pitch = (await pitchStore.get()) ?? 1;
+  const rate = (await playbackRateStore.get()) ?? 1;
+  const voiceIndex = await voiceIndexStore.get();
   const voice = synth.getVoices()[voiceIndex || 0];
   const options: ReadAloudOptions = {
     voice,

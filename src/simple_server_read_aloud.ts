@@ -1,13 +1,13 @@
 import type { SimpleServerReadAloudOptions } from "./types.d";
-import { loadPlaybackRate, loadSpeakerId } from "./store";
+import { playbackRateStore, speakerIdStore } from "./store";
 import { sleep } from "./utils";
 
 let abortController: AbortController | null = null;
 
 export async function readSequentially(texts: string[], gapInMs = 500) {
   const options: SimpleServerReadAloudOptions = {
-    speed: await loadPlaybackRate(),
-    sid: await loadSpeakerId(),
+    speed: (await playbackRateStore.get()) ?? 1,
+    sid: (await speakerIdStore.get()) ?? 0,
   };
 
   if (abortController) {

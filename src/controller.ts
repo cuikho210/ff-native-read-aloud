@@ -1,21 +1,10 @@
 import {
-  keyDriver,
-  keyPitch,
-  keyPlaybackRate,
-  keySpeakerId,
-  keyVolume,
-  loadDriver,
-  loadPitch,
-  loadPlaybackRate,
-  loadSpeakerId,
-  loadVoiceIndex,
-  loadVolume,
-  storeDriver,
-  storePitch,
-  storePlaybackRate,
-  storeSpeakerId,
-  storeVoiceIndex,
-  storeVolume,
+  driverStore,
+  pitchStore,
+  playbackRateStore,
+  speakerIdStore,
+  voiceIndexStore,
+  volumeStore,
 } from "./store";
 import { ReadAloudDriver } from "./types.d";
 
@@ -28,25 +17,25 @@ function main() {
 }
 
 async function initOptions() {
-  const pitch = await loadPitch();
-  const volume = await loadVolume();
-  const playbackRate = await loadPlaybackRate();
-  const sid = await loadSpeakerId();
-  const driver = (await loadDriver()) || ReadAloudDriver.Native;
+  const pitch = (await pitchStore.get()) ?? 1;
+  const volume = (await volumeStore.get()) ?? 1;
+  const playbackRate = (await playbackRateStore.get()) ?? 1;
+  const sid = (await speakerIdStore.get()) ?? 0;
+  const driver = (await driverStore.get()) ?? ReadAloudDriver.Native;
 
-  bindNumberOptions(keyPitch, pitch, storePitch);
-  bindNumberOptions(keyVolume, volume, storeVolume);
-  bindNumberOptions(keyPlaybackRate, playbackRate, storePlaybackRate);
-  bindNumberOptions(keySpeakerId, sid, storeSpeakerId);
-  bindSelectOptions(keyDriver, driver, (val) =>
-    storeDriver(val as ReadAloudDriver),
+  bindNumberOptions(pitchStore.key, pitch, pitchStore.set);
+  bindNumberOptions(volumeStore.key, volume, volumeStore.set);
+  bindNumberOptions(playbackRateStore.key, playbackRate, playbackRateStore.set);
+  bindNumberOptions(speakerIdStore.key, sid, speakerIdStore.set);
+  bindSelectOptions(driverStore.key, driver, (val) =>
+    driverStore.set(val as ReadAloudDriver),
   );
 }
 
 async function listVoices() {
   const elVoices = $("#list-voices");
   const voices = window.speechSynthesis.getVoices();
-  const voiceIndex = await loadVoiceIndex();
+  const voiceIndex = await voiceIndexStore.get();
 
   voices.forEach((voice, index) => {
     const input = document.createElement("input");
@@ -55,7 +44,7 @@ async function listVoices() {
     input.value = voice.name;
     input.checked = voiceIndex === index;
     input.oninput = () => {
-      storeVoiceIndex(index);
+      voiceIndexStore.set(index);
     };
 
     const label = document.createElement("label");
