@@ -1,7 +1,4 @@
-import { readSequentially as nativeReadSequentially } from "./native_read_aloud";
-import { readSequentially as simpleServerReadSequentially } from "./simple_server_read_aloud";
-import { driverStore } from "./store";
-import { ReadAloudDriver } from "./types.d";
+import { readAloud } from "./read_aloud";
 
 main();
 
@@ -67,16 +64,6 @@ function listenShortcutEvent(w: Window) {
     });
   } catch (e) {
     console.error("[listenShortcutEvent]", e);
-  }
-}
-
-async function readAloud(texts: string[]) {
-  const driver = await driverStore.get();
-
-  if (driver == ReadAloudDriver.SimpleServer) {
-    simpleServerReadSequentially(texts);
-  } else {
-    nativeReadSequentially(texts);
   }
 }
 

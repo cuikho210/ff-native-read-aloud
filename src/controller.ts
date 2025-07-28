@@ -1,3 +1,4 @@
+import { previewReadAloud } from "./read_aloud";
 import {
   driverStore,
   pitchStore,
@@ -26,7 +27,10 @@ async function initOptions() {
   bindNumberOptions(pitchStore.key, pitch, pitchStore.set);
   bindNumberOptions(volumeStore.key, volume, volumeStore.set);
   bindNumberOptions(playbackRateStore.key, playbackRate, playbackRateStore.set);
-  bindNumberOptions(speakerIdStore.key, sid, speakerIdStore.set);
+  bindNumberOptions(speakerIdStore.key, sid, (val) => {
+    speakerIdStore.set(val);
+    previewReadAloud();
+  });
   bindSelectOptions(driverStore.key, driver, (val) =>
     driverStore.set(val as ReadAloudDriver),
   );
