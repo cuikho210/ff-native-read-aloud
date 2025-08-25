@@ -13,6 +13,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@lobehub/tts": "^2.0.1",
     "webext-storage": "^2.0.1"
   }
 }

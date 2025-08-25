@@ -1,6 +1,7 @@
 import { driverStore } from "../store";
 import { readSequentially as nativeReadSequentially } from "./native_read_aloud";
 import { readSequentially as simpleServerReadSequentially } from "./simple_server_read_aloud";
+import { readSequentially as lobeTtsReadSequentially } from "./lobe_tts_read_aloud";
 import { ReadAloudDriver } from "../types.d";
 
 export async function readAloud(texts: string[]) {
@@ -11,6 +12,8 @@ export async function readAloud(texts: string[]) {
       return await simpleServerReadSequentially(texts);
     case ReadAloudDriver.Native:
       return await nativeReadSequentially(texts);
+    case ReadAloudDriver.LobeTts:
+      return await lobeTtsReadSequentially(texts);
   }
 }
 

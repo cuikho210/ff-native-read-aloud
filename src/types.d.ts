@@ -18,4 +18,5 @@ export interface SimpleServerReadAloudOptions {
 export enum ReadAloudDriver {
   Native = "native",
   SimpleServer = "simple-server",
+  LobeTts = "lobe-tts",
 }
