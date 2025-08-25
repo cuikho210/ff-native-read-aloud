@@ -1,12 +1,26 @@
 import { EdgeSpeechTTS, type EdgeSpeechPayload } from "@lobehub/tts";
 import { sleep } from "../utils";
+import { lobeTtsEdgeVoiceStore } from "../store";
+
+export const lobeTtsEdgeVoices = [
+  "en-US-AriaNeural",
+  "en-US-AnaNeural",
+  "en-US-ChristopherNeural",
+  "en-US-EricNeural",
+  "en-US-GuyNeural",
+  "en-US-JennyNeural",
+  "en-US-MichelleNeural",
+  "en-US-RogerNeural",
+  "en-US-SteffanNeural",
+];
 
 let abortController: AbortController | null = null;
 
 export async function readSequentially(texts: string[], gapInMs = 500) {
+  const voice = (await lobeTtsEdgeVoiceStore.get()) ?? lobeTtsEdgeVoices[0];
   const tts = new EdgeSpeechTTS({ locale: "en-US" });
   const options: EdgeSpeechPayload["options"] = {
-    voice: "en-US-GuyNeural",
+    voice,
   };
 
   if (abortController) {

@@ -1,6 +1,8 @@
 import { previewReadAloud } from "./read_aloud";
+import { lobeTtsEdgeVoices } from "./read_aloud/lobe_tts_read_aloud";
 import {
   driverStore,
+  lobeTtsEdgeVoiceStore,
   pitchStore,
   playbackRateStore,
   speakerIdStore,
@@ -14,10 +16,13 @@ const $ = document.querySelector.bind(document);
 main();
 function main() {
   initOptions();
-  listVoices();
+  listNativeVoices();
+  listLobeTtsEdgeVoices();
 }
 
 async function initOptions() {
+  let firstSpeak = true;
+
   const pitch = (await pitchStore.get()) ?? 1;
   const volume = (await volumeStore.get()) ?? 1;
   const playbackRate = (await playbackRateStore.get()) ?? 1;
@@ -29,15 +34,49 @@ async function initOptions() {
   bindNumberOptions(playbackRateStore.key, playbackRate, playbackRateStore.set);
   bindNumberOptions(speakerIdStore.key, sid, (val) => {
     speakerIdStore.set(val);
-    previewReadAloud();
+
+    if (firstSpeak) {
+      firstSpeak = false;
+    } else {
+      previewReadAloud();
+    }
   });
   bindSelectOptions(driverStore.key, driver, (val) =>
     driverStore.set(val as ReadAloudDriver),
   );
 }
 
-async function listVoices() {
-  const elVoices = $("#list-voices");
+async function listLobeTtsEdgeVoices() {
+  const currentVoice =
+    (await lobeTtsEdgeVoiceStore.get()) ?? lobeTtsEdgeVoices[0];
+  console.log(currentVoice);
+  const elVoices = $("#list-lobe-tts-edge-voices");
+  console.log(elVoices);
+
+  lobeTtsEdgeVoices.forEach((voice) => {
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "voice";
+    input.value = voice;
+    input.checked = currentVoice === voice;
+    input.oninput = () => {
+      lobeTtsEdgeVoiceStore.set(voice);
+    };
+
+    const label = document.createElement("label");
+    label.append(input);
+    label.append(voice);
+
+    const p = document.createElement("p");
+    p.append(label);
+    console.log(label);
+
+    elVoices?.appendChild(p);
+  });
+}
+
+async function listNativeVoices() {
+  const elVoices = $("#list-native-voices");
   const voices = window.speechSynthesis.getVoices();
   const voiceIndex = await voiceIndexStore.get();
 
