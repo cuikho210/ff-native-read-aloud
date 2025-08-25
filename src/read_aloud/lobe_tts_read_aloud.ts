@@ -12,6 +12,8 @@ export const lobeTtsEdgeVoices = [
   "en-US-MichelleNeural",
   "en-US-RogerNeural",
   "en-US-SteffanNeural",
+  "vi-VN-HoaiMyNeural",
+  "vi-VN-NamMinhNeural",
 ];
 
 let abortController: AbortController | null = null;
