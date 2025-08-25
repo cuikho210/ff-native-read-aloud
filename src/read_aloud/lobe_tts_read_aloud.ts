@@ -16,7 +16,7 @@ export const lobeTtsEdgeVoices = [
 
 let abortController: AbortController | null = null;
 
-export async function readSequentially(texts: string[], gapInMs = 500) {
+export async function readSequentially(texts: string[], gapInMs = 100) {
   const voice = (await lobeTtsEdgeVoiceStore.get()) ?? lobeTtsEdgeVoices[0];
   const tts = new EdgeSpeechTTS({ locale: "en-US" });
   const options: EdgeSpeechPayload["options"] = {
@@ -65,9 +65,33 @@ export async function playAudioBuffer(
   source.buffer = audioBuffer;
   source.connect(audioContext.destination);
 
-  abortController.signal.onabort = () => {
-    source.stop();
-  };
+  await new Promise<void>((resolve) => {
+    const handleEnded = () => {
+      // Clean up the abort listener once audio ends naturally
+      abortController.signal.removeEventListener("abort", handleAbort);
+      audioContext.close(); // Close the audio context when done
+      resolve();
+    };
 
-  source.start(0);
+    const handleAbort = () => {
+      source.stop(); // Stop the audio playback immediately
+      // Clean up the ended listener once audio is aborted
+      source.removeEventListener("ended", handleEnded);
+      audioContext.close(); // Close the audio context on abort
+      resolve(); // Resolve the promise to unblock the sequence
+    };
+
+    // Add event listeners
+    source.addEventListener("ended", handleEnded);
+    abortController.signal.addEventListener("abort", handleAbort);
+
+    // Start playing the audio
+    source.start(0);
+
+    // If the abort signal was already triggered before the audio even started,
+    // ensure the promise resolves immediately.
+    if (abortController.signal.aborted) {
+      handleAbort();
+    }
+  });
 }
