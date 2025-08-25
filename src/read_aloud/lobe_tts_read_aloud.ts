@@ -1,6 +1,6 @@
-import { EdgeSpeechTTS, type EdgeSpeechPayload } from "@lobehub/tts";
-import { sleep } from "../utils";
+import { EdgeSpeechTTS } from "@lobehub/tts";
 import { lobeTtsEdgeVoiceStore } from "../store";
+import { AudioBufferQueue } from "../audio_buffer_queue";
 
 export const lobeTtsEdgeVoices = [
   "en-US-AriaNeural",
@@ -15,83 +15,38 @@ export const lobeTtsEdgeVoices = [
 ];
 
 let abortController: AbortController | null = null;
+const queue = new AudioBufferQueue();
 
-export async function readSequentially(texts: string[], gapInMs = 100) {
-  const voice = (await lobeTtsEdgeVoiceStore.get()) ?? lobeTtsEdgeVoices[0];
-  const tts = new EdgeSpeechTTS({ locale: "en-US" });
-  const options: EdgeSpeechPayload["options"] = {
-    voice,
-  };
-
+export async function readSequentially(texts: string[]) {
   if (abortController) {
     abortController.abort("Aborted due to a new request");
   }
-
   abortController = new AbortController();
+  abortController.signal.onabort = () => queue.stop();
+  queue.stop();
 
-  for (const text of texts) {
-    await readAloud(tts, text, options, abortController);
-    await sleep(gapInMs);
-  }
-}
-
-export async function readAloud(
-  tts: EdgeSpeechTTS,
-  text: string,
-  options: EdgeSpeechPayload["options"],
-  abortController: AbortController,
-) {
-  const payload: EdgeSpeechPayload = {
-    input: text,
-    options,
-  };
-
-  try {
-    const response = await tts.create(payload);
-    const arrayBuffer = await response.arrayBuffer();
-    await playAudioBuffer(arrayBuffer, abortController);
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-export async function playAudioBuffer(
-  arrayBuffer: ArrayBuffer,
-  abortController: AbortController,
-) {
-  const audioContext = new window.AudioContext();
-  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-  const source = audioContext.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(audioContext.destination);
-
-  await new Promise<void>((resolve) => {
-    const handleEnded = () => {
-      // Clean up the abort listener once audio ends naturally
-      abortController.signal.removeEventListener("abort", handleAbort);
-      audioContext.close(); // Close the audio context when done
-      resolve();
-    };
-
-    const handleAbort = () => {
-      source.stop(); // Stop the audio playback immediately
-      // Clean up the ended listener once audio is aborted
-      source.removeEventListener("ended", handleEnded);
-      audioContext.close(); // Close the audio context on abort
-      resolve(); // Resolve the promise to unblock the sequence
-    };
-
-    // Add event listeners
-    source.addEventListener("ended", handleEnded);
-    abortController.signal.addEventListener("abort", handleAbort);
-
-    // Start playing the audio
-    source.start(0);
-
-    // If the abort signal was already triggered before the audio even started,
-    // ensure the promise resolves immediately.
-    if (abortController.signal.aborted) {
-      handleAbort();
-    }
+  fetchTtsSequentially(abortController, texts, (buffer) => {
+    queue.enqueue(buffer);
   });
+}
+
+async function fetchTtsSequentially(
+  abortController: AbortController,
+  texts: string[],
+  onFetched: (buffer: ArrayBuffer) => void,
+) {
+  const voice = (await lobeTtsEdgeVoiceStore.get()) ?? lobeTtsEdgeVoices[0];
+  const tts = new EdgeSpeechTTS({ locale: "en-US" });
+  for (const input of texts) {
+    if (abortController.signal.aborted) return;
+
+    try {
+      const response = await tts.create({ input, options: { voice } });
+      const arrayBuffer = await response.arrayBuffer();
+      if (abortController.signal.aborted) return;
+      onFetched(arrayBuffer);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
