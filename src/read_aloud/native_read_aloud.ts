@@ -1,11 +1,11 @@
-import type { ReadAloudOptions } from "./types.d";
+import type { ReadAloudOptions } from "../types.d";
 import {
   pitchStore,
   playbackRateStore,
   voiceIndexStore,
   volumeStore,
-} from "./store";
-import { sleep } from "./utils";
+} from "../store";
+import { sleep } from "../utils";
 
 const synth = window.speechSynthesis;
 

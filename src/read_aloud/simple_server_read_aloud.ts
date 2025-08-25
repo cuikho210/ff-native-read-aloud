@@ -1,6 +1,6 @@
-import type { SimpleServerReadAloudOptions } from "./types.d";
-import { playbackRateStore, speakerIdStore } from "./store";
-import { sleep } from "./utils";
+import type { SimpleServerReadAloudOptions } from "../types.d";
+import { playbackRateStore, speakerIdStore } from "../store";
+import { sleep } from "../utils";
 
 let abortController: AbortController | null = null;
 
