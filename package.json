@@ -5,8 +5,8 @@
     "build": "bun run build.ts",
     "test": "bun test",
     "test:serve": "bun run test/server.ts",
-    "test:player": "bun run test/player.e2e.ts",
-    "test:e2e": "bun run test/e2e.ts"
+    "test:player": "bun test ./test/player.e2e.ts",
+    "test:e2e": "bun test ./test/e2e.ts"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",

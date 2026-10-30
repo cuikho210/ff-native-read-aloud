@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>MSE player harness</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; }
+      label { display: block; margin-top: 0.75rem; }
+      input, textarea { width: 100%; box-sizing: border-box; }
+      #log { background: #111; color: #eee; padding: 1rem; min-height: 12rem; }
+      button { margin-right: 0.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>MSE player harness</h1>
+    <label>Base URL <input id="base-url" value="http://localhost:8890/v1" /></label>
+    <label>Model <input id="model" value="" /></label>
+    <label>Voice <input id="voice" value="default" /></label>
+    <label>Texts <textarea id="texts" rows="7">First paragraph from the streaming harness.
+
+Second paragraph follows the first.
+
+Third paragraph finishes the selection.</textarea></label>
+    <p>
+      <button id="play">Play</button>
+      <button id="stop">Stop</button>
+    </p>
+    <pre id="log"></pre>
+    <script src="/harness.js"></script>
+  </body>
+</html>
