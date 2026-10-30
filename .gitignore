@@ -176,3 +176,6 @@ dist
 
 # Test harness build output
 test-dist/
+
+# Playwright MCP artifacts
+.playwright-mcp/

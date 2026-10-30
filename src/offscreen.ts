@@ -29,7 +29,6 @@ chrome.runtime.onMessage.addListener(
         sendResponse({ ok: true });
         return true;
       case "tts:start":
-        player.stop();
         void player.play(typed.texts, typed.config);
         return;
       case "tts:stop":

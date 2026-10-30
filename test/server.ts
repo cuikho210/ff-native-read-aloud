@@ -33,10 +33,13 @@ const distAssets = new Set([
   "/offscreen.html",
 ]);
 
-const page = new Response(
-  `<!doctype html><html><body><p id="paragraph">The content script reads this paragraph aloud.</p></body></html>`,
-  { headers: { "content-type": "text/html; charset=utf-8" } },
-);
+const pageHtml = `<!doctype html><html><body><p id="paragraph">The content script reads this paragraph aloud.</p></body></html>`;
+
+function pageResponse(): Response {
+  return new Response(pageHtml, {
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
 
 const server = Bun.serve({
   port,
@@ -50,7 +53,7 @@ const server = Bun.serve({
       return new Response(Bun.file(resolve(distDir, "harness.js")));
     }
     if (url.pathname === "/page.html") {
-      return page;
+      return pageResponse();
     }
     if (url.pathname === "/popup.html") {
       const html = await Bun.file(resolve(root, "dist/controller.html")).text();

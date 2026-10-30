@@ -49,6 +49,8 @@ async function handleKeydown(event: KeyboardEvent): Promise<void> {
 }
 
 if (typeof window !== "undefined" && typeof chrome !== "undefined") {
+  document.documentElement.dataset.simpleReadaloud = "ready";
+
   window.addEventListener("keydown", (event) => {
     void handleKeydown(event);
   });
