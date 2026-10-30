@@ -1,19 +1,25 @@
 {
-  "name": "native-read-aloud",
-  "module": "src/index.ts",
+  "name": "simple-readaloud",
   "type": "module",
   "scripts": {
-    "build": "bun build.ts"
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "test:serve": "bun run test/server.ts",
+    "test:player": "bun run test/player.e2e.ts",
+    "test:e2e": "bun run test/e2e.ts"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
     "@types/bun": "latest",
-    "@types/firefox-webext-browser": "^120.0.4"
+    "@types/chrome": "^0.3.7",
+    "daisyui": "^5.7.50",
+    "playwright": "^1.64.1",
+    "tailwindcss": "^4.3.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@lobehub/tts": "^2.0.1",
-    "webext-storage": "^2.0.1"
+    "preact": "^11.1.0"
   }
 }

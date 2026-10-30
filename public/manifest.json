@@ -1,18 +1,14 @@
 {
-  "manifest_version": 2,
-  "name": "Native Read Aloud",
-  "version": "1.7",
-  "description": "A tool to read aloud content using native tts",
-  "icons": {
-    "48": "icon-48.png"
-  },
-  "permissions": [
-    "activeTab",
-    "storage",
-    "*://localhost/*",
-    "*://speech.platform.bing.com/*"
-  ],
-  "browser_action": {
+  "manifest_version": 3,
+  "name": "simple-readaloud",
+  "version": "2.0.0",
+  "minimum_chrome_version": "116",
+  "description": "Read selected text aloud with native speech or any OpenAI-compatible TTS server.",
+  "icons": { "48": "icon-48.png" },
+  "permissions": ["storage", "offscreen"],
+  "host_permissions": ["*://*/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
     "default_icon": "icon-32.png",
     "default_title": "Read-aloud controls",
     "default_popup": "controller.html"
