@@ -6,73 +6,55 @@ import type {
   PlaybackState,
 } from "./types";
 
-export class Setting<T> {
-  private readonly area: chrome.storage.StorageArea;
+type AreaName = "local" | "session";
 
+export class Setting<T> {
   constructor(
     readonly key: string,
     readonly defaultValue: T,
-    area: chrome.storage.StorageArea,
-  ) {
-    this.area = area;
+    private readonly areaName: AreaName,
+  ) {}
+
+  private area(): chrome.storage.StorageArea {
+    return this.areaName === "local" ? chrome.storage.local : chrome.storage.session;
   }
 
   async get(): Promise<T> {
-    const values = await this.area.get(this.key);
+    const values = await this.area().get(this.key);
     return this.key in values ? (values[this.key] as T) : this.defaultValue;
   }
 
   async set(value: T): Promise<void> {
-    await this.area.set({ [this.key]: value });
+    await this.area().set({ [this.key]: value });
   }
 }
 
-export const driverSetting = new Setting<Driver>(
-  "driver",
-  "native",
-  chrome.storage.local,
-);
-export const volumeSetting = new Setting<number>("volume", 1, chrome.storage.local);
-export const playbackRateSetting = new Setting<number>(
-  "playback-rate",
-  1,
-  chrome.storage.local,
-);
-export const pitchSetting = new Setting<number>("pitch", 1, chrome.storage.local);
+export const driverSetting = new Setting<Driver>("driver", "native", "local");
+export const volumeSetting = new Setting<number>("volume", 1, "local");
+export const playbackRateSetting = new Setting<number>("playback-rate", 1, "local");
+export const pitchSetting = new Setting<number>("pitch", 1, "local");
 export const nativeVoiceUriSetting = new Setting<string>(
   "native-voice-uri",
   "",
-  chrome.storage.local,
+  "local",
 );
 export const openAiBaseUrlSetting = new Setting<string>(
   "openai-base-url",
   "http://localhost:8880/v1",
-  chrome.storage.local,
+  "local",
 );
-export const openAiApiKeySetting = new Setting<string>(
-  "openai-api-key",
-  "",
-  chrome.storage.local,
-);
-export const openAiModelSetting = new Setting<string>(
-  "openai-model",
-  "",
-  chrome.storage.local,
-);
-export const openAiVoiceSetting = new Setting<string>(
-  "openai-voice",
-  "",
-  chrome.storage.local,
-);
+export const openAiApiKeySetting = new Setting<string>("openai-api-key", "", "local");
+export const openAiModelSetting = new Setting<string>("openai-model", "", "local");
+export const openAiVoiceSetting = new Setting<string>("openai-voice", "", "local");
 export const playbackStateSetting = new Setting<PlaybackState>(
   "playback-state",
   { status: "idle", updatedAt: 0 },
-  chrome.storage.session,
+  "session",
 );
 export const activeNativeTabSetting = new Setting<number | null>(
   "active-native-tab",
   null,
-  chrome.storage.session,
+  "session",
 );
 
 const clamp = (value: number, min: number, max: number) =>
