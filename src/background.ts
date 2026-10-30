@@ -7,21 +7,33 @@ import {
 import type { Driver, PlaybackState, PlayerState } from "./types";
 
 let creatingOffscreen: Promise<void> | null = null;
+let startGeneration = 0;
 
-async function ensureOffscreen(): Promise<void> {
-  if (creatingOffscreen) {
-    await creatingOffscreen;
-    return;
+export function resetOrchestrationForTests(): void {
+  creatingOffscreen = null;
+  startGeneration = 0;
+}
+
+function invalidateStarts(): void {
+  startGeneration += 1;
+}
+
+export async function ensureOffscreen(): Promise<void> {
+  if (!creatingOffscreen) {
+    creatingOffscreen = prepareOffscreen().finally(() => {
+      creatingOffscreen = null;
+    });
   }
 
+  await creatingOffscreen;
+}
+
+async function prepareOffscreen(): Promise<void> {
   if (await chrome.offscreen.hasDocument()) {
     return;
   }
 
-  creatingOffscreen = createOffscreen().finally(() => {
-    creatingOffscreen = null;
-  });
-  await creatingOffscreen;
+  await createOffscreen();
 }
 
 async function createOffscreen(): Promise<void> {
@@ -89,12 +101,26 @@ async function setPlaybackState(
   await playbackStateSetting.set(playbackState);
 }
 
-async function handleStart(texts: string[]): Promise<void> {
+export async function handleStart(texts: string[]): Promise<void> {
+  const generation = ++startGeneration;
+
   try {
     await stopNativeTab();
+    if (generation !== startGeneration) {
+      return;
+    }
+
     await setPlaybackState({ status: "loading" }, "openai");
+    if (generation !== startGeneration) {
+      return;
+    }
+
     await ensureOffscreen();
     const config = await loadOpenAiConfig();
+    if (generation !== startGeneration) {
+      return;
+    }
+
     await chrome.runtime.sendMessage({
       target: "offscreen",
       type: "tts:start",
@@ -102,6 +128,9 @@ async function handleStart(texts: string[]): Promise<void> {
       config,
     } satisfies OffscreenMessage);
   } catch (error) {
+    if (generation !== startGeneration) {
+      return;
+    }
     await setPlaybackState(
       { status: "error", message: errorMessage(error) },
       "openai",
@@ -109,12 +138,17 @@ async function handleStart(texts: string[]): Promise<void> {
   }
 }
 
-async function handleNativeStart(
+export async function handleNativeStart(
   tabId: number | undefined,
   sendResponse: (response: { ok: boolean }) => void,
 ): Promise<void> {
+  const generation = ++startGeneration;
+
   try {
     await stopOffscreen();
+    if (generation !== startGeneration) {
+      return;
+    }
 
     const previousTab = await activeNativeTabSetting.get();
     if (typeof previousTab === "number" && previousTab !== tabId) {
@@ -123,10 +157,18 @@ async function handleNativeStart(
         .catch(() => {});
     }
 
+    if (generation !== startGeneration) {
+      return;
+    }
+
     await activeNativeTabSetting.set(tabId ?? null);
+    if (generation !== startGeneration) {
+      return;
+    }
+
     await setPlaybackState({ status: "loading" }, "native", tabId);
   } finally {
-    sendResponse({ ok: true });
+    sendResponse({ ok: generation === startGeneration });
   }
 }
 
@@ -159,7 +201,8 @@ async function handleOffscreenState(state: PlayerState): Promise<void> {
   await setPlaybackState(state, "openai");
 }
 
-async function handleStop(): Promise<void> {
+export async function handleStop(): Promise<void> {
+  invalidateStarts();
   await Promise.all([stopOffscreen(), stopNativeTab()]);
   await setPlaybackState({ status: "idle" });
 }

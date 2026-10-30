@@ -71,6 +71,14 @@ const server = Bun.serve({
     if (distAssets.has(url.pathname)) {
       return new Response(Bun.file(resolve(root, "dist", url.pathname.slice(1))));
     }
+    if (url.pathname === "/slow/v1/models") {
+      await Bun.sleep(1000);
+      return Response.json({ data: [{ id: "slow-model" }] });
+    }
+    if (url.pathname === "/slow/v1/audio/voices") {
+      await Bun.sleep(1000);
+      return Response.json({ voices: ["Slow Voice"] });
+    }
     if (url.pathname.startsWith("/v1/")) {
       return proxy(request, url);
     }

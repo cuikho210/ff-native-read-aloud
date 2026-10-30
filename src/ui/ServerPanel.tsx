@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 import { discoverModels, discoverVoices } from "../openai_tts";
 import { saveAppSetting } from "../settings";
 import type { AppSettings } from "../types";
@@ -24,6 +24,9 @@ export function ServerPanel({
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const latestSettings = useRef(settings);
+  latestSettings.current = settings;
 
   const persist = async () => {
     await Promise.all([
@@ -52,7 +55,10 @@ export function ServerPanel({
       if (modelResult.status === "fulfilled") {
         setModels(modelResult.value);
         parts.push(`${modelResult.value.length} models`);
-        if (!settings.openAiModel.trim() && modelResult.value[0]) {
+        if (
+          !latestSettings.current.openAiModel.trim() &&
+          modelResult.value[0]
+        ) {
           update("openAiModel", modelResult.value[0]);
         }
       } else {
@@ -63,7 +69,10 @@ export function ServerPanel({
       if (voiceResult.status === "fulfilled") {
         setVoices(voiceResult.value);
         parts.push(`${voiceResult.value.length} voices`);
-        if (!settings.openAiVoice.trim() && voiceResult.value[0]) {
+        if (
+          !latestSettings.current.openAiVoice.trim() &&
+          voiceResult.value[0]
+        ) {
           update("openAiVoice", voiceResult.value[0]);
         }
       } else {

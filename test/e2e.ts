@@ -12,6 +12,7 @@ const DIST = resolve(ROOT, "dist");
 const TEST_PORT = 8890;
 const PAGE_URL = `http://localhost:${TEST_PORT}/page.html`;
 const TTS_URL = "http://localhost:8880/v1";
+const SLOW_URL = `http://localhost:${TEST_PORT}/slow/v1`;
 
 export interface ExtensionSession {
   context: BrowserContext;
@@ -369,6 +370,40 @@ test(
         });
         await waitForStatus(popup, "idle");
       }
+
+      await popup.getByRole("tab", { name: "OpenAI-compatible" }).click();
+      await waitForSetting(popup, "driver", "openai");
+      await popup.fill("#openai-base-url", SLOW_URL);
+      await waitForSetting(popup, "openai-base-url", SLOW_URL);
+      await popup.fill("#openai-model", "");
+      await popup.fill("#openai-voice", "");
+      await waitForSetting(popup, "openai-model", "");
+      await waitForSetting(popup, "openai-voice", "");
+
+      await popup.click("#refresh");
+      await popup.fill("#openai-model", "typed-model");
+      await popup.fill("#openai-voice", "typed-voice");
+      await waitForSetting(popup, "openai-model", "typed-model");
+      await waitForSetting(popup, "openai-voice", "typed-voice");
+      await popup.waitForFunction(
+        () =>
+          document
+            .querySelector("#discovery-status")
+            ?.textContent?.includes("1 models, 1 voices") ?? false,
+        undefined,
+        { timeout: 5000 },
+      );
+
+      assert.equal(
+        await popup.inputValue("#openai-model"),
+        "typed-model",
+        "Refresh must not overwrite a model typed while discovery was in flight",
+      );
+      assert.equal(
+        await popup.inputValue("#openai-voice"),
+        "typed-voice",
+        "Refresh must not overwrite a voice typed while discovery was in flight",
+      );
 
       assert.ok(
         !consoleErrors.some((text) =>
