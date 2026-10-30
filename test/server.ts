@@ -25,6 +25,14 @@ if (!result.success) {
   process.exit(1);
 }
 
+const distAssets = new Set([
+  "/controller.js",
+  "/controller.css",
+  "/icon-32.png",
+  "/icon-48.png",
+  "/offscreen.html",
+]);
+
 const page = new Response(
   `<!doctype html><html><body><p id="paragraph">The content script reads this paragraph aloud.</p></body></html>`,
   { headers: { "content-type": "text/html; charset=utf-8" } },
@@ -43,6 +51,22 @@ const server = Bun.serve({
     }
     if (url.pathname === "/page.html") {
       return page;
+    }
+    if (url.pathname === "/popup.html") {
+      const html = await Bun.file(resolve(root, "dist/controller.html")).text();
+      const injected = html.replace(
+        '<script src="controller.js"></script>',
+        '<script src="/chrome-shim.js"></script><script src="controller.js"></script>',
+      );
+      return new Response(injected, {
+        headers: { "content-type": "text/html; charset=utf-8" },
+      });
+    }
+    if (url.pathname === "/chrome-shim.js") {
+      return new Response(Bun.file(resolve(root, "test/chrome-shim.js")));
+    }
+    if (distAssets.has(url.pathname)) {
+      return new Response(Bun.file(resolve(root, "dist", url.pathname.slice(1))));
     }
     if (url.pathname.startsWith("/v1/")) {
       return proxy(request, url);

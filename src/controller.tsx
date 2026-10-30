@@ -1,1 +1,4 @@
-document.querySelector("#app")!.textContent = "simple-readaloud";
+import { render } from "preact";
+import { App } from "./ui/App";
+
+render(<App />, document.querySelector("#app")!);
