@@ -108,11 +108,32 @@ test(
         "final idle state must report received audio bytes",
       );
 
+      const errorStart = finished.length;
+      await page.fill("#voice", "nope");
+      await page.click("#play");
+      const failed = await waitForLog(page, (entries) =>
+        entries
+          .slice(errorStart)
+          .some(
+            (entry) =>
+              entry.status === "error" &&
+              (entry.message ?? "").includes("unknown voice"),
+          ),
+      );
+      const errorEntry = failed
+        .slice(errorStart)
+        .find((entry) => entry.status === "error");
+      assert.ok(
+        (errorEntry?.message ?? "").includes("unknown voice"),
+        "bad voice must surface the server message",
+      );
+
       const longText = Array.from(
         { length: 20 },
         () => "This is a long paragraph used to exercise the stop button.",
       ).join(" ");
-      const stopStart = finished.length;
+      const stopStart = failed.length;
+      await page.fill("#voice", "default");
       await page.fill("#texts", longText);
       await page.click("#play");
       await waitForLog(
@@ -131,26 +152,6 @@ test(
       assert.ok(
         stopped.slice(stopStart).every((entry) => entry.status !== "error"),
         "stop must not produce an error state",
-      );
-
-      const errorStart = stopped.length;
-      await page.fill("#voice", "nope");
-      await page.click("#play");
-      const failed = await waitForLog(page, (entries) =>
-        entries
-          .slice(errorStart)
-          .some(
-            (entry) =>
-              entry.status === "error" &&
-              (entry.message ?? "").includes("unknown voice"),
-          ),
-      );
-      const errorEntry = failed
-        .slice(errorStart)
-        .find((entry) => entry.status === "error");
-      assert.ok(
-        (errorEntry?.message ?? "").includes("unknown voice"),
-        "bad voice must surface the server message",
       );
     } finally {
       await browser?.close();
