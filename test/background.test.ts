@@ -12,6 +12,18 @@ let sent: SentMessage[] = [];
 let hasDocument = false;
 let createDocumentCalls = 0;
 let createDocumentGate: Promise<void> = Promise.resolve();
+let createdMenus: unknown[] = [];
+let tabMessages: {
+  tabId: number;
+  message: SentMessage;
+  options?: { frameId?: number };
+}[] = [];
+let menuListener: ((info: any, tab?: any) => void) | undefined;
+let sendMessageImpl: (
+  tabId: number,
+  message: SentMessage,
+  options?: { frameId?: number },
+) => Promise<unknown> = async () => undefined;
 
 function makeArea(data: Map<string, unknown>) {
   return {
@@ -58,12 +70,36 @@ const fakeChrome = {
       addListener() {},
       removeListener() {},
     },
+    onInstalled: { addListener() {} },
+    onStartup: { addListener() {} },
     async sendMessage(message: SentMessage) {
       sent.push(message);
       if (message.target === "offscreen" && message.type === "ping") {
         return { ok: true };
       }
       return undefined;
+    },
+  },
+  contextMenus: {
+    removeAll(callback?: () => void) {
+      callback?.();
+    },
+    create(createProperties: {
+      id?: string;
+      title?: string;
+      contexts?: string[];
+    }) {
+      createdMenus.push(createProperties);
+    },
+    onClicked: {
+      addListener(
+        listener: (
+          info: { menuItemId: string; frameId?: number },
+          tab?: { id?: number },
+        ) => void,
+      ) {
+        menuListener = listener;
+      },
     },
   },
   storage: {
@@ -86,8 +122,13 @@ const fakeChrome = {
     },
   },
   tabs: {
-    async sendMessage() {
-      return undefined;
+    async sendMessage(
+      tabId: number,
+      message: SentMessage,
+      options?: { frameId?: number },
+    ) {
+      tabMessages.push({ tabId, message, options });
+      return sendMessageImpl(tabId, message, options);
     },
   },
 };
@@ -101,6 +142,9 @@ beforeEach(() => {
   hasDocument = false;
   createDocumentCalls = 0;
   createDocumentGate = Promise.resolve();
+  createdMenus = [];
+  tabMessages = [];
+  sendMessageImpl = async () => undefined;
   localData.clear();
   sessionData.clear();
   background.resetOrchestrationForTests();
@@ -183,4 +227,56 @@ test("a native start supersedes a pending OpenAI start", async () => {
   expect(state.status).toBe("loading");
   expect(state.driver).toBe("native");
   expect(state.tabId).toBe(7);
+});
+
+test("registers one Read aloud item for selections", async () => {
+  await background.installContextMenu();
+  expect(createdMenus).toEqual([
+    { id: "read-selection", title: "Read aloud", contexts: ["selection"] },
+  ]);
+});
+
+test("a menu click asks the clicked tab and frame to read its selection", async () => {
+  await background.handleMenuClick(
+    { menuItemId: "read-selection", frameId: 3 },
+    { id: 42 },
+  );
+  expect(tabMessages).toEqual([
+    { tabId: 42, message: { type: "read-selection" }, options: { frameId: 3 } },
+  ]);
+});
+
+test("an unrelated menu id sends nothing", async () => {
+  await background.handleMenuClick(
+    { menuItemId: "other", frameId: 0 },
+    { id: 42 },
+  );
+  expect(tabMessages).toHaveLength(0);
+});
+
+test("a tab without an id is ignored and a failed send is swallowed", async () => {
+  await background.handleMenuClick(
+    { menuItemId: "read-selection", frameId: 0 },
+    undefined,
+  );
+  expect(tabMessages).toHaveLength(0);
+
+  sendMessageImpl = async () => {
+    throw new Error("Could not establish connection.");
+  };
+  await expect(
+    background.handleMenuClick(
+      { menuItemId: "read-selection", frameId: 0 },
+      { id: 7 },
+    ),
+  ).resolves.toBeUndefined();
+});
+
+test("the registered click listener delegates to handleMenuClick", async () => {
+  await background.installContextMenu();
+  menuListener?.({ menuItemId: "read-selection", frameId: 1 }, { id: 9 });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(tabMessages).toEqual([
+    { tabId: 9, message: { type: "read-selection" }, options: { frameId: 1 } },
+  ]);
 });

@@ -278,6 +278,48 @@ test(
       await waitForStatus(popup, "idle");
       await waitForSpeechServerIdle();
 
+      await selectParagraph(page);
+      await popup.evaluate(async (pageUrl) => {
+        const tabs = await chrome.tabs.query({});
+        const target = tabs.find((tab) => tab.url === pageUrl);
+        await chrome.tabs.sendMessage(
+          target!.id!,
+          { type: "read-selection" },
+          { frameId: 0 },
+        );
+      }, PAGE_URL);
+      const fromMenu = await waitForState(
+        popup,
+        (state) => state?.status === "playing",
+      );
+      assert.equal(fromMenu.driver, "openai");
+      assert.ok(
+        (fromMenu.receivedBytes ?? 0) > 0,
+        "menu path must stream audio bytes",
+      );
+      await popup.click("#stop");
+      await waitForStatus(popup, "idle");
+      await waitForSpeechServerIdle();
+
+      await page.evaluate(() => window.getSelection()?.removeAllRanges());
+      await popup.evaluate(async (pageUrl) => {
+        const tabs = await chrome.tabs.query({});
+        const target = tabs.find((tab) => tab.url === pageUrl);
+        await chrome.tabs.sendMessage(
+          target!.id!,
+          { type: "read-selection" },
+          { frameId: 0 },
+        );
+      }, PAGE_URL);
+      for (let elapsed = 0; elapsed < 1500; elapsed += 100) {
+        assert.equal(
+          (await getState(popup))?.status,
+          "idle",
+          "an empty selection must start nothing",
+        );
+        await Bun.sleep(100);
+      }
+
       await popup.fill("#openai-voice", "nope");
       await waitForSetting(popup, "openai-voice", "nope");
       await popup.click("#test-voice");

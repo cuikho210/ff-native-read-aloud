@@ -1,10 +1,12 @@
-import type { BackgroundMessage, OffscreenMessage } from "./messages";
+import type { BackgroundMessage, ContentMessage, OffscreenMessage } from "./messages";
 import {
   activeNativeTabSetting,
   loadOpenAiConfig,
   playbackStateSetting,
 } from "./settings";
 import type { Driver, PlaybackState, PlayerState } from "./types";
+
+export const READ_SELECTION_MENU_ID = "read-selection";
 
 let creatingOffscreen: Promise<void> | null = null;
 let startGeneration = 0;
@@ -207,9 +209,57 @@ export async function handleStop(): Promise<void> {
   await setPlaybackState({ status: "idle" });
 }
 
+export async function installContextMenu(): Promise<void> {
+  await Promise.resolve(
+    chrome.contextMenus.removeAll(() => {
+      try {
+        chrome.contextMenus.create({
+          id: READ_SELECTION_MENU_ID,
+          title: "Read aloud",
+          contexts: ["selection"],
+        });
+      } catch {
+        // A duplicate id means the menu already exists; playback is unaffected.
+      }
+    }),
+  );
+}
+
+export async function handleMenuClick(
+  info: { menuItemId: string | number; frameId?: number },
+  tab: { id?: number } | undefined,
+): Promise<void> {
+  if (info.menuItemId !== READ_SELECTION_MENU_ID) {
+    return;
+  }
+  if (typeof tab?.id !== "number") {
+    return;
+  }
+
+  await chrome.tabs
+    .sendMessage(
+      tab.id,
+      { type: "read-selection" } satisfies ContentMessage,
+      { frameId: info.frameId ?? 0 },
+    )
+    .catch(() => {});
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
+
+chrome.runtime.onInstalled.addListener(() => {
+  void installContextMenu();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  void installContextMenu();
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  void handleMenuClick(info, tab);
+});
 
 chrome.runtime.onMessage.addListener(
   (
