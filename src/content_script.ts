@@ -1,7 +1,7 @@
-import type { BackgroundMessage } from "./messages";
+import type { BackgroundMessage, ContentMessage } from "./messages";
 import { speakNative, stopNative } from "./native_tts";
 import { driverSetting, loadNativeSettings } from "./settings";
-import type { NativeVoiceSettings, PlayerState } from "./types";
+import type { Driver, NativeVoiceSettings, PlayerState } from "./types";
 
 export function splitIntoParagraphs(text: string): string[] {
   return text
@@ -71,6 +71,38 @@ function readSelection(): string[] {
   return splitIntoParagraphs(selection);
 }
 
+export interface ReadDeps {
+  getDriver: () => Promise<Driver>;
+  startNative: (texts: string[]) => Promise<void>;
+  startOpenAi: (texts: string[]) => void;
+}
+
+const defaultReadDeps: ReadDeps = {
+  getDriver: () => driverSetting.get(),
+  startNative: (texts) => startNativeReading(texts),
+  startOpenAi: (texts) => {
+    void sendBackground({ target: "background", type: "tts:start", texts });
+  },
+};
+
+export async function readTexts(
+  texts: string[],
+  deps: ReadDeps = defaultReadDeps,
+): Promise<void> {
+  if (texts.length === 0) {
+    return;
+  }
+
+  const driver = await deps.getDriver();
+  if (driver === "openai") {
+    invalidateNativeStart();
+    deps.startOpenAi(texts);
+    return;
+  }
+
+  await deps.startNative(texts);
+}
+
 async function handleKeydown(event: KeyboardEvent): Promise<void> {
   if (!event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
     return;
@@ -85,14 +117,7 @@ async function handleKeydown(event: KeyboardEvent): Promise<void> {
   }
   event.preventDefault();
 
-  const driver = await driverSetting.get();
-  if (driver === "openai") {
-    invalidateNativeStart();
-    void sendBackground({ target: "background", type: "tts:start", texts });
-    return;
-  }
-
-  await startNativeReading(texts);
+  await readTexts(texts);
 }
 
 if (typeof window !== "undefined" && typeof chrome !== "undefined") {
@@ -102,7 +127,12 @@ if (typeof window !== "undefined" && typeof chrome !== "undefined") {
     void handleKeydown(event);
   });
 
-  chrome.runtime.onMessage.addListener((message: { type?: string }) => {
+  chrome.runtime.onMessage.addListener((message: ContentMessage) => {
+    if (message?.type === "read-selection") {
+      void readTexts(readSelection());
+      return;
+    }
+
     if (message?.type === "stop-native") {
       invalidateNativeStart();
       stopNative();

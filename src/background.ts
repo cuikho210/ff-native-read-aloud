@@ -226,7 +226,7 @@ export async function installContextMenu(): Promise<void> {
 }
 
 export async function handleMenuClick(
-  info: { menuItemId: string; frameId?: number },
+  info: { menuItemId: string | number; frameId?: number },
   tab: { id?: number } | undefined,
 ): Promise<void> {
   if (info.menuItemId !== READ_SELECTION_MENU_ID) {
