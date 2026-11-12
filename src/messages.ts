@@ -7,6 +7,10 @@ export type BackgroundMessage =
   | { target: "background"; type: "tts:stop" }
   | { target: "background"; type: "playback:state"; state: PlayerState };
 
+export type ContentMessage =
+  | { type: "read-selection" }
+  | { type: "stop-native" };
+
 export type OffscreenMessage =
   | { target: "offscreen"; type: "ping" }
   | { target: "offscreen"; type: "tts:start"; texts: string[]; config: OpenAiConfig }

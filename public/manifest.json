@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
   "name": "simple-readaloud",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "minimum_chrome_version": "116",
   "description": "Read selected text aloud with native speech or any OpenAI-compatible TTS server.",
   "icons": { "48": "icon-48.png" },
-  "permissions": ["storage", "offscreen"],
+  "permissions": ["storage", "offscreen", "contextMenus"],
   "host_permissions": ["*://*/*"],
   "background": { "service_worker": "background.js" },
   "action": {
